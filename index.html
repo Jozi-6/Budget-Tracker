@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget Tracker</title>
+    <meta name="description" content="Personal Budget Tracker PWA">
+    <meta name="theme-color" content="#4f46e5">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .checkbox-item.checked {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        .tab-content {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .tab-content.active {
+            display: block;
+            opacity: 1;
+        }
+        .nav-item.active {
+            color: #4f46e5;
+        }
+        .nav-item.active svg {
+            stroke: #4f46e5;
+        }
+        body {
+            padding-bottom: 80px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Sticky Header with Balance -->
+    <header class="sticky-header bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg">
+        <div class="max-w-md mx-auto px-4 py-4">
+            <h1 class="text-xl font-bold text-center mb-2">Budget Tracker</h1>
+            <div class="text-center">
+                <p class="text-sm opacity-90">Current Balance</p>
+                <p id="currentBalance" class="text-4xl font-bold">₱0.00</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-md mx-auto px-4 py-6">
+        <!-- Tab 1: Add Credit -->
+        <div id="tab-credit" class="tab-content active">
+            <section class="bg-white rounded-xl shadow-md p-4">
+                <h2 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                    <span class="text-green-500 mr-2">➕</span> Add Credit
+                </h2>
+                <div class="space-y-3">
+                    <input type="number" id="creditAmount" placeholder="Amount" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <input type="text" id="creditSource" placeholder="Source (e.g., Salary, Allowance)" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <input type="date" id="creditDate" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <p class="text-xs text-gray-500">Date (Optional - Defaults to Today)</p>
+                    <button onclick="addCredit()" 
+                        class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition">
+                        Add Credit
+                    </button>
+                </div>
+            </section>
+        </div>
+
+        <!-- Tab 2: Planned Allocations -->
+        <div id="tab-allocations" class="tab-content">
+            <section class="bg-white rounded-xl shadow-md p-4">
+                <h2 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                    <span class="text-blue-500 mr-2">📋</span> Planned Allocations
+                </h2>
+                <div class="space-y-3">
+                    <input type="text" id="allocationName" placeholder="Expense Name (e.g., Tuition)" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <input type="number" id="allocationAmount" placeholder="Amount" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <input type="date" id="allocationDate" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <p class="text-xs text-gray-500">Date (Optional - Defaults to Today)</p>
+                    <button onclick="addAllocation()" 
+                        class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition">
+                        Add Planned Expense
+                    </button>
+                </div>
+                <div id="allocationsList" class="space-y-2 mt-3"></div>
+            </section>
+        </div>
+
+        <!-- Tab 3: Instant Spending -->
+        <div id="tab-instant" class="tab-content">
+            <section class="bg-white rounded-xl shadow-md p-4">
+                <h2 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                    <span class="text-red-500 mr-2">⚡</span> Instant Spending Log
+                </h2>
+                <div class="space-y-3">
+                    <input type="text" id="instantDescription" placeholder="Description (e.g., Food, Transport)" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <input type="number" id="instantAmount" placeholder="Amount" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <input type="date" id="instantDate" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <p class="text-xs text-gray-500">Date (Optional - Defaults to Today)</p>
+                    <button onclick="addInstantLog()" 
+                        class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition">
+                        Log Instant Spending
+                    </button>
+                </div>
+                <div id="instantLogList" class="space-y-2 mt-3"></div>
+            </section>
+        </div>
+
+        <!-- Tab 4: Market Checklist -->
+        <div id="tab-market" class="tab-content">
+            <section class="bg-white rounded-xl shadow-md p-4">
+                <h2 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                    <span class="text-purple-500 mr-2">🛒</span> Market Checklist
+                </h2>
+                <div class="space-y-3">
+                    <input type="text" id="marketItem" placeholder="Shopping Item" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <input type="number" id="marketItemPrice" placeholder="Price" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <input type="date" id="marketItemDate" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <p class="text-xs text-gray-500">Date (Optional - Defaults to Today)</p>
+                    <button onclick="addMarketItem()" 
+                        class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg transition">
+                        Add to Checklist
+                    </button>
+                </div>
+                <div id="marketChecklist" class="space-y-2 mt-3"></div>
+            </section>
+        </div>
+
+        <!-- Tab 5: Transaction History -->
+        <div id="tab-history" class="tab-content">
+            <section class="bg-white rounded-xl shadow-md p-4">
+                <h2 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                    <span class="text-gray-500 mr-2">📜</span> Transaction History
+                </h2>
+                
+                <!-- Filter Dropdowns -->
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Month</label>
+                        <select id="filterMonth" onchange="updateTransactionHistory()" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            <option value="all">All Months</option>
+                            <option value="0">January</option>
+                            <option value="1">February</option>
+                            <option value="2">March</option>
+                            <option value="3">April</option>
+                            <option value="4">May</option>
+                            <option value="5">June</option>
+                            <option value="6">July</option>
+                            <option value="7">August</option>
+                            <option value="8">September</option>
+                            <option value="9">October</option>
+                            <option value="10">November</option>
+                            <option value="11">December</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                        <select id="filterYear" onchange="updateTransactionHistory()" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Summary Card -->
+                <div id="summaryCard" class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 mb-4 border border-indigo-200">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2">Summary for Selected Period</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-xs text-gray-600">Total Credits</p>
+                            <p id="totalCredits" class="text-lg font-bold text-green-600">₱0.00</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-600">Total Expenses</p>
+                            <p id="totalExpenses" class="text-lg font-bold text-red-600">₱0.00</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center mb-3">
+                    <button onclick="clearHistory()" 
+                        class="text-sm text-red-500 hover:text-red-700 underline">
+                        Clear History
+                    </button>
+                    <button onclick="exportPDF()" 
+                        class="text-sm text-indigo-500 hover:text-indigo-700 underline">
+                        Download PDF Report
+                    </button>
+                </div>
+                <div id="transactionHistory" class="space-y-2 max-h-96 overflow-y-auto"></div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
+        <div class="max-w-md mx-auto flex justify-around items-center py-2">
+            <button onclick="switchTab('credit')" class="nav-item active flex flex-col items-center p-2 text-gray-600 hover:text-indigo-600 transition" data-tab="credit">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span class="text-xs mt-1">Credit</span>
+            </button>
+            <button onclick="switchTab('allocations')" class="nav-item flex flex-col items-center p-2 text-gray-600 hover:text-indigo-600 transition" data-tab="allocations">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <span class="text-xs mt-1">Planned</span>
+            </button>
+            <button onclick="switchTab('instant')" class="nav-item flex flex-col items-center p-2 text-gray-600 hover:text-indigo-600 transition" data-tab="instant">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span class="text-xs mt-1">Instant</span>
+            </button>
+            <button onclick="switchTab('market')" class="nav-item flex flex-col items-center p-2 text-gray-600 hover:text-indigo-600 transition" data-tab="market">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span class="text-xs mt-1">Market</span>
+            </button>
+            <button onclick="switchTab('history')" class="nav-item flex flex-col items-center p-2 text-gray-600 hover:text-indigo-600 transition" data-tab="history">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="text-xs mt-1">History</span>
+            </button>
+        </div>
+    </nav>
+
+    <script>
+        // Data Structure
+        let budgetData = {
+            credits: [],
+            allocations: [],
+            instantLogs: [],
+            marketChecklist: [],
+            transactionHistory: []
+        };
+
+        // Calculate current balance by processing all transactions chronologically
+        function calculateCurrentBalance() {
+            let balance = 0;
+            const sortedTransactions = [...budgetData.transactionHistory].sort((a, b) => a.date - b.date);
+            
+            sortedTransactions.forEach(transaction => {
+                balance += transaction.amount;
+            });
+            
+            return balance;
+        }
+
+        // Get carry-over balance from previous month
+        function getCarryOverBalance(selectedMonth, selectedYear) {
+            let balance = 0;
+            const sortedTransactions = [...budgetData.transactionHistory].sort((a, b) => a.date - b.date);
+            
+            sortedTransactions.forEach(transaction => {
+                const transactionDate = new Date(transaction.date);
+                const transactionMonth = transactionDate.getMonth();
+                const transactionYear = transactionDate.getFullYear();
+                
+                // Only include transactions from before the selected month
+                const isBeforeSelectedMonth = 
+                    transactionYear < selectedYear || 
+                    (transactionYear === selectedYear && transactionMonth < selectedMonth);
+                
+                if (isBeforeSelectedMonth) {
+                    balance += transaction.amount;
+                }
+            });
+            
+            return balance;
+        }
+
+        // Recalculate all resultingBalance values in transactionHistory chronologically
+        function recalculateAllBalances() {
+            let balance = 0;
+            const sortedTransactions = [...budgetData.transactionHistory].sort((a, b) => a.date - b.date);
+            
+            sortedTransactions.forEach(transaction => {
+                balance += transaction.amount;
+                transaction.resultingBalance = balance;
+            });
+        }
+
+        // Initialize Year Dropdown
+        function initializeYearDropdown() {
+            const yearSelect = document.getElementById('filterYear');
+            const currentYear = new Date().getFullYear();
+            
+            // Add "All Years" option
+            const allYearsOption = document.createElement('option');
+            allYearsOption.value = 'all';
+            allYearsOption.textContent = 'All Years';
+            yearSelect.appendChild(allYearsOption);
+            
+            // Add current year and next 5 years
+            for (let i = 0; i <= 5; i++) {
+                const year = currentYear + i;
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                if (i === 0) option.selected = true; // Select current year by default
+                yearSelect.appendChild(option);
+            }
+        }
+
+        // Load data from LocalStorage
+        function loadData() {
+            const saved = localStorage.getItem('budgetTrackerData');
+            if (saved) {
+                budgetData = JSON.parse(saved);
+            }
+            updateUI();
+        }
+
+        // Save data to LocalStorage
+        function saveData() {
+            localStorage.setItem('budgetTrackerData', JSON.stringify(budgetData));
+        }
+
+        // Format currency
+        function formatCurrency(amount) {
+            return '₱' + parseFloat(amount).toFixed(2);
+        }
+
+        // Format date
+        function formatDate(timestamp) {
+            return new Date(timestamp).toLocaleString('en-PH', {
+                dateStyle: 'short',
+                timeStyle: 'short'
+            });
+        }
+
+        // Get transaction date from date input or use current date
+        function getTransactionDate(dateInputId) {
+            const dateInput = document.getElementById(dateInputId);
+            if (dateInput && dateInput.value) {
+                // Use the selected date with current time (12:00 PM)
+                const selectedDate = new Date(dateInput.value);
+                selectedDate.setHours(12, 0, 0, 0);
+                return selectedDate.getTime();
+            }
+            // Use current date/time
+            return Date.now();
+        }
+
+        // Get filtered transactions based on selected month/year
+        function getFilteredTransactions() {
+            const selectedMonth = document.getElementById('filterMonth').value;
+            const selectedYear = document.getElementById('filterYear').value;
+            
+            return budgetData.transactionHistory.filter(transaction => {
+                const transactionDate = new Date(transaction.date);
+                const transactionMonth = transactionDate.getMonth();
+                const transactionYear = transactionDate.getFullYear();
+                
+                const monthMatch = selectedMonth === 'all' || transactionMonth === parseInt(selectedMonth);
+                const yearMatch = selectedYear === 'all' || transactionYear === parseInt(selectedYear);
+                
+                return monthMatch && yearMatch;
+            });
+        }
+
+        // Update transaction history with filtering
+        function updateTransactionHistory() {
+            renderTransactionHistory();
+        }
+
+        // Switch Tab
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            
+            // Update navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.tab === tabName) {
+                    item.classList.add('active');
+                }
+            });
+
+            // Set default date based on current filter when switching to input tabs
+            if (tabName !== 'history') {
+                setDefaultDateForTab(tabName);
+            }
+        }
+
+        // Set default date for a tab based on current filter or recent transaction
+        function setDefaultDateForTab(tabName) {
+            const selectedMonth = document.getElementById('filterMonth').value;
+            const selectedYear = document.getElementById('filterYear').value;
+            
+            const dateInputId = `${tabName === 'credit' ? 'credit' : tabName === 'allocations' ? 'allocation' : tabName === 'instant' ? 'instant' : 'marketItem'}Date`;
+            const dateInput = document.getElementById(dateInputId);
+            
+            if (!dateInput) return;
+            
+            // If filtering by specific month/year, look for most recent transaction in that period
+            if (selectedMonth !== 'all' && selectedYear !== 'all') {
+                const targetMonth = parseInt(selectedMonth);
+                const targetYear = parseInt(selectedYear);
+                
+                // Find most recent transaction in the selected month/year
+                const transactionsInPeriod = budgetData.transactionHistory.filter(t => {
+                    const date = new Date(t.date);
+                    return date.getMonth() === targetMonth && date.getFullYear() === targetYear;
+                });
+                
+                if (transactionsInPeriod.length > 0) {
+                    // Sort by date descending and get the most recent
+                    transactionsInPeriod.sort((a, b) => b.date - a.date);
+                    const mostRecentDate = new Date(transactionsInPeriod[0].date);
+                    const dateString = mostRecentDate.toISOString().split('T')[0];
+                    dateInput.value = dateString;
+                } else {
+                    // No transactions in period, default to first day of selected month
+                    const date = new Date(targetYear, targetMonth, 1);
+                    const dateString = date.toISOString().split('T')[0];
+                    dateInput.value = dateString;
+                }
+            } else {
+                // If not filtering, clear the date input to default to today
+                dateInput.value = '';
+            }
+        }
+
+        // Update all UI elements
+        function updateUI() {
+            document.getElementById('currentBalance').textContent = formatCurrency(calculateCurrentBalance());
+            renderAllocations();
+            renderInstantLogs();
+            renderMarketChecklist();
+            renderTransactionHistory();
+        }
+
+        // Add Credit
+        function addCredit() {
+            const amount = parseFloat(document.getElementById('creditAmount').value);
+            const source = document.getElementById('creditSource').value.trim();
+
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+
+            if (!source) {
+                alert('Please enter a source');
+                return;
+            }
+
+            const timestamp = getTransactionDate('creditDate');
+            budgetData.credits.push({
+                id: timestamp,
+                amount: amount,
+                source: source,
+                timestamp: timestamp
+            });
+
+            budgetData.transactionHistory.push({
+                date: timestamp,
+                description: `Credit: ${source}`,
+                amount: amount,
+                resultingBalance: 0,
+                type: 'credit'
+            });
+
+            recalculateAllBalances();
+            saveData();
+            updateUI();
+
+            document.getElementById('creditAmount').value = '';
+            document.getElementById('creditSource').value = '';
+            document.getElementById('creditDate').value = '';
+        }
+
+        // Add Planned Allocation
+        function addAllocation() {
+            const name = document.getElementById('allocationName').value.trim();
+            const amount = parseFloat(document.getElementById('allocationAmount').value);
+
+            if (!name) {
+                alert('Please enter an expense name');
+                return;
+            }
+
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+
+            const timestamp = getTransactionDate('allocationDate');
+            budgetData.allocations.push({
+                id: timestamp,
+                name: name,
+                amount: amount,
+                checked: false,
+                timestamp: timestamp
+            });
+
+            saveData();
+            updateUI();
+
+            document.getElementById('allocationName').value = '';
+            document.getElementById('allocationAmount').value = '';
+            document.getElementById('allocationDate').value = '';
+        }
+
+        // Toggle Allocation Checkbox
+        function toggleAllocation(id) {
+            const allocation = budgetData.allocations.find(a => a.id === id);
+            if (!allocation) return;
+
+            if (!allocation.checked) {
+                // Checking the box - subtract from balance
+                budgetData.transactionHistory.push({
+                    date: Date.now(),
+                    description: `Expense: ${allocation.name}`,
+                    amount: -allocation.amount,
+                    resultingBalance: 0,
+                    type: 'allocation'
+                });
+            } else {
+                // Unchecking - add back to balance
+                budgetData.transactionHistory.push({
+                    date: Date.now(),
+                    description: `Undo: ${allocation.name}`,
+                    amount: allocation.amount,
+                    resultingBalance: 0,
+                    type: 'allocation_undo'
+                });
+            }
+
+            allocation.checked = !allocation.checked;
+            recalculateAllBalances();
+            saveData();
+            updateUI();
+        }
+
+        // Delete Allocation
+        function deleteAllocation(id) {
+            const allocation = budgetData.allocations.find(a => a.id === id);
+            if (!allocation) return;
+
+            if (allocation.checked) {
+                // Find and remove the corresponding transaction from history
+                budgetData.transactionHistory = budgetData.transactionHistory.filter(t => 
+                    t.description === `Expense: ${allocation.name}` || t.description === `Undo: ${allocation.name}`
+                );
+            }
+
+            budgetData.allocations = budgetData.allocations.filter(a => a.id !== id);
+            recalculateAllBalances();
+            saveData();
+            updateUI();
+        }
+
+        // Render Allocations
+        function renderAllocations() {
+            const container = document.getElementById('allocationsList');
+            container.innerHTML = '';
+
+            if (budgetData.allocations.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm text-center">No planned allocations yet</p>';
+                return;
+            }
+
+            budgetData.allocations.forEach(allocation => {
+                const div = document.createElement('div');
+                div.className = `flex items-center justify-between p-3 rounded-lg border ${allocation.checked ? 'bg-gray-100 border-gray-300' : 'bg-blue-50 border-blue-200'}`;
+                div.innerHTML = `
+                    <div class="flex items-center flex-1">
+                        <input type="checkbox" ${allocation.checked ? 'checked' : ''} 
+                            onchange="toggleAllocation(${allocation.id})"
+                            class="w-5 h-5 mr-3 accent-blue-500">
+                        <div class="${allocation.checked ? 'checkbox-item checked' : ''}">
+                            <p class="font-medium text-gray-800">${allocation.name}</p>
+                            <p class="text-sm text-gray-600">${formatCurrency(allocation.amount)}</p>
+                        </div>
+                    </div>
+                    <button onclick="deleteAllocation(${allocation.id})" 
+                        class="text-red-500 hover:text-red-700 ml-2">
+                        🗑️
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Add Instant Log
+        function addInstantLog() {
+            const description = document.getElementById('instantDescription').value.trim();
+            const amount = parseFloat(document.getElementById('instantAmount').value);
+
+            if (!description) {
+                alert('Please enter a description');
+                return;
+            }
+
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+
+            const timestamp = getTransactionDate('instantDate');
+
+            budgetData.instantLogs.push({
+                id: timestamp,
+                description: description,
+                amount: amount,
+                timestamp: timestamp
+            });
+
+            budgetData.transactionHistory.push({
+                date: timestamp,
+                description: description,
+                amount: -amount,
+                resultingBalance: 0,
+                type: 'instant'
+            });
+
+            recalculateAllBalances();
+            saveData();
+            updateUI();
+
+            document.getElementById('instantDescription').value = '';
+            document.getElementById('instantAmount').value = '';
+            document.getElementById('instantDate').value = '';
+        }
+
+        // Delete Instant Log
+        function deleteInstantLog(id) {
+            const log = budgetData.instantLogs.find(l => l.id === id);
+            if (!log) return;
+
+            // Find and remove the corresponding transaction from history
+            budgetData.transactionHistory = budgetData.transactionHistory.filter(t => 
+                t.description !== log.description || t.type !== 'instant'
+            );
+
+            budgetData.instantLogs = budgetData.instantLogs.filter(l => l.id !== id);
+            recalculateAllBalances();
+            saveData();
+            updateUI();
+        }
+
+        // Render Instant Logs
+        function renderInstantLogs() {
+            const container = document.getElementById('instantLogList');
+            container.innerHTML = '';
+
+            if (budgetData.instantLogs.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm text-center">No instant spending logged yet</p>';
+                return;
+            }
+
+            budgetData.instantLogs.forEach(log => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-3 rounded-lg bg-red-50 border border-red-200';
+                div.innerHTML = `
+                    <div class="flex-1">
+                        <p class="font-medium text-gray-800">${log.description}</p>
+                        <p class="text-sm text-gray-600">${formatCurrency(log.amount)}</p>
+                        <p class="text-xs text-gray-400">${formatDate(log.timestamp)}</p>
+                    </div>
+                    <button onclick="deleteInstantLog(${log.id})" 
+                        class="text-red-500 hover:text-red-700 ml-2">
+                        🗑️
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Add Market Item
+        function addMarketItem() {
+            const item = document.getElementById('marketItem').value.trim();
+            const price = parseFloat(document.getElementById('marketItemPrice').value) || 0;
+
+            if (!item) {
+                alert('Please enter an item');
+                return;
+            }
+
+            const timestamp = getTransactionDate('marketItemDate');
+            budgetData.marketChecklist.push({
+                id: timestamp,
+                item: item,
+                price: price,
+                checked: false,
+                timestamp: timestamp
+            });
+
+            saveData();
+            updateUI();
+
+            document.getElementById('marketItem').value = '';
+            document.getElementById('marketItemPrice').value = '';
+            document.getElementById('marketItemDate').value = '';
+        }
+
+        // Toggle Market Item - CRITICAL: Subtract price when checked
+        function toggleMarketItem(id) {
+            const item = budgetData.marketChecklist.find(i => i.id === id);
+            if (!item) return;
+
+            if (!item.checked && item.price > 0) {
+                // Checking the box - subtract from balance and add to history
+                item.checked = true;
+
+                budgetData.transactionHistory.push({
+                    date: Date.now(),
+                    description: `Market: ${item.item}`,
+                    amount: -item.price,
+                    resultingBalance: 0,
+                    type: 'market'
+                });
+            } else if (item.checked) {
+                // Unchecking - add back to balance
+                item.checked = false;
+
+                budgetData.transactionHistory.push({
+                    date: Date.now(),
+                    description: `Unmarked: ${item.item}`,
+                    amount: item.price,
+                    resultingBalance: 0,
+                    type: 'market_undo'
+                });
+            } else {
+                // No price, just toggle visual state
+                item.checked = !item.checked;
+            }
+
+            recalculateAllBalances();
+            saveData();
+            updateUI();
+        }
+
+        // Delete Market Item
+        function deleteMarketItem(id) {
+            const item = budgetData.marketChecklist.find(i => i.id === id);
+            if (!item) return;
+
+            if (item.checked && item.price > 0) {
+                // Find and remove the corresponding transaction from history
+                budgetData.transactionHistory = budgetData.transactionHistory.filter(t => 
+                    t.description !== `Market: ${item.item}` && t.description !== `Unmarked: ${item.item}`
+                );
+            }
+
+            budgetData.marketChecklist = budgetData.marketChecklist.filter(i => i.id !== id);
+            recalculateAllBalances();
+            saveData();
+            updateUI();
+        }
+
+        // Render Market Checklist
+        function renderMarketChecklist() {
+            const container = document.getElementById('marketChecklist');
+            container.innerHTML = '';
+
+            if (budgetData.marketChecklist.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm text-center">Market checklist is empty</p>';
+                return;
+            }
+
+            budgetData.marketChecklist.forEach(item => {
+                const div = document.createElement('div');
+                div.className = `flex items-center justify-between p-3 rounded-lg border ${item.checked ? 'bg-gray-100 border-gray-300' : 'bg-purple-50 border-purple-200'}`;
+                div.innerHTML = `
+                    <div class="flex items-center flex-1">
+                        <input type="checkbox" ${item.checked ? 'checked' : ''} 
+                            onchange="toggleMarketItem(${item.id})"
+                            class="w-5 h-5 mr-3 accent-purple-500">
+                        <div class="${item.checked ? 'checkbox-item checked' : ''}">
+                            <p class="font-medium text-gray-800">${item.item}</p>
+                            ${item.price > 0 ? `<p class="text-sm text-gray-600">${formatCurrency(item.price)}</p>` : '<p class="text-sm text-gray-400">No price set</p>'}
+                        </div>
+                    </div>
+                    <button onclick="deleteMarketItem(${item.id})" class="text-red-500 hover:text-red-700 ml-2">🗑️</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Render Transaction History
+        function renderTransactionHistory() {
+            const container = document.getElementById('transactionHistory');
+            container.innerHTML = '';
+            
+            const selectedMonth = document.getElementById('filterMonth').value;
+            const selectedYear = document.getElementById('filterYear').value;
+            
+            const filteredTransactions = getFilteredTransactions();
+            
+            // Sort transactions by date (newest first)
+            filteredTransactions.sort((a, b) => b.date - a.date);
+            
+            // Calculate carry-over balance if filtering by specific month
+            let carryOverBalance = 0;
+            if (selectedMonth !== 'all' && selectedYear !== 'all') {
+                carryOverBalance = getCarryOverBalance(parseInt(selectedMonth), parseInt(selectedYear));
+            }
+            
+            // Update summary card (only show filtered period's specific math, not including carry-over)
+            let totalCredits = 0;
+            let totalExpenses = 0;
+            
+            filteredTransactions.forEach(transaction => {
+                if (transaction.amount > 0) {
+                    totalCredits += transaction.amount;
+                } else {
+                    totalExpenses += Math.abs(transaction.amount);
+                }
+            });
+            
+            document.getElementById('totalCredits').textContent = formatCurrency(totalCredits);
+            document.getElementById('totalExpenses').textContent = formatCurrency(totalExpenses);
+
+            // Display carry-over balance if filtering by specific month
+            if (selectedMonth !== 'all' && selectedYear !== 'all' && carryOverBalance !== 0) {
+                const carryOverDiv = document.createElement('div');
+                carryOverDiv.className = 'p-3 rounded-lg border bg-indigo-50 border-indigo-200 mb-2';
+                carryOverDiv.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <p class="font-medium text-indigo-800">Carry Over from Previous Month</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-indigo-600">
+                                ${formatCurrency(carryOverBalance)}
+                            </p>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(carryOverDiv);
+            }
+
+            if (filteredTransactions.length === 0) {
+                if (carryOverBalance === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-sm text-center">No transactions found for this period</p>';
+                }
+                return;
+            }
+
+            filteredTransactions.forEach(transaction => {
+                const div = document.createElement('div');
+                const isPositive = transaction.amount > 0;
+                div.className = `p-3 rounded-lg border ${isPositive ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`;
+                div.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <p class="font-medium text-gray-800">${transaction.description}</p>
+                            <p class="text-xs text-gray-500">${formatDate(transaction.date)}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}">
+                                ${isPositive ? '+' : ''}${formatCurrency(transaction.amount)}
+                            </p>
+                            <p class="text-xs text-gray-500">Balance: ${formatCurrency(transaction.resultingBalance)}</p>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Clear History
+        function clearHistory() {
+            if (confirm('Are you sure you want to clear all transaction history? This cannot be undone.')) {
+                budgetData.transactionHistory = [];
+                saveData();
+                updateUI();
+            }
+        }
+
+        // Export PDF
+        function exportPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Get filtered transactions
+            const filteredTransactions = getFilteredTransactions();
+            
+            // Format amount for PDF with +/- based on transaction type
+            function formatPDFAmount(transaction) {
+                const amount = Math.abs(transaction.amount).toFixed(2);
+                if (transaction.type === 'credit' || transaction.type === 'allocation_undo' || transaction.type === 'market_undo') {
+                    return `+${amount}`;
+                } else {
+                    return `-${amount}`;
+                }
+            }
+            
+            // Format balance for PDF (no +/-)
+            function formatPDFBalance(amount) {
+                return `₱${Math.abs(amount).toFixed(2)}`;
+            }
+            
+            // Title
+            doc.setFontSize(20);
+            doc.text('Budget Tracker Report', 14, 22);
+            
+            // Current Balance
+            doc.setFontSize(14);
+            doc.text(`Current Balance: ${formatPDFBalance(budgetData.currentBalance)}`, 14, 35);
+            
+            // Transaction History Table
+            if (filteredTransactions.length > 0) {
+                const tableData = filteredTransactions.map(t => [
+                    formatDate(t.date),
+                    t.description,
+                    formatPDFAmount(t),
+                    formatPDFBalance(t.resultingBalance)
+                ]);
+                
+                doc.autoTable({
+                    startY: 45,
+                    head: [['Date', 'Description', 'Amount', 'Balance']],
+                    body: tableData,
+                    theme: 'grid',
+                    headStyles: { fillColor: [79, 70, 229] },
+                    styles: { fontSize: 10 },
+                    didDrawCell: function(data) {
+                        // Color the Amount column (index 2)
+                        if (data.section === 'body' && data.column.index === 2) {
+                            const cellText = data.cell.raw;
+                            if (cellText.startsWith('+')) {
+                                data.cell.styles.textColor = [0, 128, 0]; // Green
+                            } else if (cellText.startsWith('-')) {
+                                data.cell.styles.textColor = [220, 0, 0]; // Red
+                            }
+                        }
+                    }
+                });
+            } else {
+                doc.setFontSize(12);
+                doc.text('No transactions to display for selected period', 14, 50);
+            }
+            
+            // Save PDF
+            doc.save('budget-tracker-report.pdf');
+        }
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('Service Worker registered'))
+                .catch(err => console.log('Service Worker registration failed', err));
+        }
+
+        // Initialize
+        initializeYearDropdown();
+        loadData();
+    </script>
+</body>
+</html>
