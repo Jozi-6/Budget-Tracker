@@ -87,9 +87,38 @@
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                     <input type="number" id="allocationAmount" placeholder="Amount" 
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    <input type="date" id="allocationDate" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    <p class="text-xs text-gray-500">Date (Optional - Defaults to Today)</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <select id="allocationMonth" onchange="updateSessionMonthYear('allocation')" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                <option value="">Select Month</option>
+                                <option value="0">January</option>
+                                <option value="1">February</option>
+                                <option value="2">March</option>
+                                <option value="3">April</option>
+                                <option value="4">May</option>
+                                <option value="5">June</option>
+                                <option value="6">July</option>
+                                <option value="7">August</option>
+                                <option value="8">September</option>
+                                <option value="9">October</option>
+                                <option value="10">November</option>
+                                <option value="11">December</option>
+                            </select>
+                        </div>
+                        <div>
+                            <select id="allocationYear" onchange="updateSessionMonthYear('allocation')" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                <option value="">Select Year</option>
+                                <option value="2025">2025</option>
+                                <option value="2026">2026</option>
+                                <option value="2027">2027</option>
+                                <option value="2028">2028</option>
+                                <option value="2029">2029</option>
+                                <option value="2030">2030</option>
+                            </select>
+                        </div>
+                    </div>
                     <button onclick="addAllocation()" 
                         class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition">
                         Add Planned Expense
@@ -110,9 +139,38 @@
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                     <input type="number" id="instantAmount" placeholder="Amount" 
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    <input type="date" id="instantDate" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    <p class="text-xs text-gray-500">Date (Optional - Defaults to Today)</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <select id="instantMonth" onchange="updateSessionMonthYear('instant')" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                <option value="">Select Month</option>
+                                <option value="0">January</option>
+                                <option value="1">February</option>
+                                <option value="2">March</option>
+                                <option value="3">April</option>
+                                <option value="4">May</option>
+                                <option value="5">June</option>
+                                <option value="6">July</option>
+                                <option value="7">August</option>
+                                <option value="8">September</option>
+                                <option value="9">October</option>
+                                <option value="10">November</option>
+                                <option value="11">December</option>
+                            </select>
+                        </div>
+                        <div>
+                            <select id="instantYear" onchange="updateSessionMonthYear('instant')" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                <option value="">Select Year</option>
+                                <option value="2025">2025</option>
+                                <option value="2026">2026</option>
+                                <option value="2027">2027</option>
+                                <option value="2028">2028</option>
+                                <option value="2029">2029</option>
+                                <option value="2030">2030</option>
+                            </select>
+                        </div>
+                    </div>
                     <button onclick="addInstantLog()" 
                         class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition">
                         Log Instant Spending
@@ -131,11 +189,38 @@
                 <div class="space-y-3">
                     <input type="text" id="marketItem" placeholder="Shopping Item" 
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    <input type="number" id="marketItemPrice" placeholder="Price" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    <input type="date" id="marketItemDate" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    <p class="text-xs text-gray-500">Date (Optional - Defaults to Today)</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <select id="marketMonth" onchange="updateSessionMonthYear('market')" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                <option value="">Select Month</option>
+                                <option value="0">January</option>
+                                <option value="1">February</option>
+                                <option value="2">March</option>
+                                <option value="3">April</option>
+                                <option value="4">May</option>
+                                <option value="5">June</option>
+                                <option value="6">July</option>
+                                <option value="7">August</option>
+                                <option value="8">September</option>
+                                <option value="9">October</option>
+                                <option value="10">November</option>
+                                <option value="11">December</option>
+                            </select>
+                        </div>
+                        <div>
+                            <select id="marketYear" onchange="updateSessionMonthYear('market')" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                <option value="">Select Year</option>
+                                <option value="2025">2025</option>
+                                <option value="2026">2026</option>
+                                <option value="2027">2027</option>
+                                <option value="2028">2028</option>
+                                <option value="2029">2029</option>
+                                <option value="2030">2030</option>
+                            </select>
+                        </div>
+                    </div>
                     <button onclick="addMarketItem()" 
                         class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg transition">
                         Add to Checklist
@@ -257,6 +342,10 @@
             transactionHistory: []
         };
 
+        // Persistent Month/Year Session
+        let sessionMonth = '';
+        let sessionYear = '';
+
         // Calculate current balance by processing all transactions chronologically
         function calculateCurrentBalance() {
             let balance = 0;
@@ -352,17 +441,69 @@
             });
         }
 
-        // Get transaction date from date input or use current date
-        function getTransactionDate(dateInputId) {
-            const dateInput = document.getElementById(dateInputId);
-            if (dateInput && dateInput.value) {
-                // Use the selected date with current time (12:00 PM)
-                const selectedDate = new Date(dateInput.value);
+        // Get transaction date from Month/Year dropdowns or date input or use current date
+        function getTransactionDate(prefix) {
+            // Handle credit tab separately (still uses full date picker)
+            if (prefix === 'credit') {
+                const dateInput = document.getElementById('creditDate');
+                if (dateInput && dateInput.value) {
+                    const selectedDate = new Date(dateInput.value);
+                    selectedDate.setHours(12, 0, 0, 0);
+                    return selectedDate.getTime();
+                }
+                return Date.now();
+            }
+            
+            // Handle allocation, instant, market tabs (use Month/Year dropdowns)
+            const monthInput = document.getElementById(`${prefix}Month`);
+            const yearInput = document.getElementById(`${prefix}Year`);
+            
+            if (monthInput && yearInput && monthInput.value !== '' && yearInput.value !== '') {
+                // Use the selected month/year with 1st day of month at 12:00 PM
+                const selectedMonth = parseInt(monthInput.value);
+                const selectedYear = parseInt(yearInput.value);
+                const selectedDate = new Date(selectedYear, selectedMonth, 1);
                 selectedDate.setHours(12, 0, 0, 0);
+                
+                // Save to session
+                sessionMonth = monthInput.value;
+                sessionYear = yearInput.value;
+                
                 return selectedDate.getTime();
             }
-            // Use current date/time
+            
+            // Use session month/year if available, otherwise current date/time
+            if (sessionMonth !== '' && sessionYear !== '') {
+                const sessionDateObj = new Date(parseInt(sessionYear), parseInt(sessionMonth), 1);
+                sessionDateObj.setHours(12, 0, 0, 0);
+                return sessionDateObj.getTime();
+            }
+            
             return Date.now();
+        }
+
+        // Update session Month/Year and sync across all tabs
+        function updateSessionMonthYear(sourceTab) {
+            const monthInput = document.getElementById(`${sourceTab}Month`);
+            const yearInput = document.getElementById(`${sourceTab}Year`);
+            
+            if (monthInput && yearInput) {
+                sessionMonth = monthInput.value;
+                sessionYear = yearInput.value;
+                
+                // Sync to other tabs
+                const tabs = ['allocation', 'instant', 'market'];
+                tabs.forEach(tab => {
+                    if (tab !== sourceTab) {
+                        const tabMonthInput = document.getElementById(`${tab}Month`);
+                        const tabYearInput = document.getElementById(`${tab}Year`);
+                        if (tabMonthInput && tabYearInput) {
+                            tabMonthInput.value = sessionMonth;
+                            tabYearInput.value = sessionYear;
+                        }
+                    }
+                });
+            }
         }
 
         // Get filtered transactions based on selected month/year
@@ -411,42 +552,35 @@
             }
         }
 
-        // Set default date for a tab based on current filter or recent transaction
+        // Set default Month/Year for a tab based on current filter or recent transaction
         function setDefaultDateForTab(tabName) {
             const selectedMonth = document.getElementById('filterMonth').value;
             const selectedYear = document.getElementById('filterYear').value;
             
-            const dateInputId = `${tabName === 'credit' ? 'credit' : tabName === 'allocations' ? 'allocation' : tabName === 'instant' ? 'instant' : 'marketItem'}Date`;
-            const dateInput = document.getElementById(dateInputId);
+            const prefix = tabName === 'allocations' ? 'allocation' : tabName === 'instant' ? 'instant' : tabName === 'market' ? 'market' : '';
             
-            if (!dateInput) return;
+            if (!prefix) return;
             
-            // If filtering by specific month/year, look for most recent transaction in that period
+            const monthInput = document.getElementById(`${prefix}Month`);
+            const yearInput = document.getElementById(`${prefix}Year`);
+            
+            if (!monthInput || !yearInput) return;
+            
+            // If session month/year exists, use it (persistent across tabs)
+            if (sessionMonth !== '' && sessionYear !== '') {
+                monthInput.value = sessionMonth;
+                yearInput.value = sessionYear;
+                return;
+            }
+            
+            // If filtering by specific month/year, set dropdowns to match
             if (selectedMonth !== 'all' && selectedYear !== 'all') {
-                const targetMonth = parseInt(selectedMonth);
-                const targetYear = parseInt(selectedYear);
-                
-                // Find most recent transaction in the selected month/year
-                const transactionsInPeriod = budgetData.transactionHistory.filter(t => {
-                    const date = new Date(t.date);
-                    return date.getMonth() === targetMonth && date.getFullYear() === targetYear;
-                });
-                
-                if (transactionsInPeriod.length > 0) {
-                    // Sort by date descending and get the most recent
-                    transactionsInPeriod.sort((a, b) => b.date - a.date);
-                    const mostRecentDate = new Date(transactionsInPeriod[0].date);
-                    const dateString = mostRecentDate.toISOString().split('T')[0];
-                    dateInput.value = dateString;
-                } else {
-                    // No transactions in period, default to first day of selected month
-                    const date = new Date(targetYear, targetMonth, 1);
-                    const dateString = date.toISOString().split('T')[0];
-                    dateInput.value = dateString;
-                }
+                monthInput.value = selectedMonth;
+                yearInput.value = selectedYear;
             } else {
-                // If not filtering, clear the date input to default to today
-                dateInput.value = '';
+                // If not filtering, clear the dropdowns
+                monthInput.value = '';
+                yearInput.value = '';
             }
         }
 
@@ -496,7 +630,7 @@
 
             document.getElementById('creditAmount').value = '';
             document.getElementById('creditSource').value = '';
-            document.getElementById('creditDate').value = '';
+            // Don't clear creditDate to maintain persistent date session
         }
 
         // Add Planned Allocation
@@ -514,9 +648,10 @@
                 return;
             }
 
-            const timestamp = getTransactionDate('allocationDate');
+            const timestamp = getTransactionDate('allocation');
+            const uniqueId = Date.now(); // Use Date.now() for truly unique ID
             budgetData.allocations.push({
-                id: timestamp,
+                id: uniqueId,
                 name: name,
                 amount: amount,
                 checked: false,
@@ -528,7 +663,7 @@
 
             document.getElementById('allocationName').value = '';
             document.getElementById('allocationAmount').value = '';
-            document.getElementById('allocationDate').value = '';
+            // Don't clear Month/Year dropdowns to maintain persistent session
         }
 
         // Toggle Allocation Checkbox
@@ -537,22 +672,24 @@
             if (!allocation) return;
 
             if (!allocation.checked) {
-                // Checking the box - subtract from balance
+                // Checking the box - subtract from balance using allocation's assigned date
                 budgetData.transactionHistory.push({
-                    date: Date.now(),
+                    date: allocation.timestamp, // Use allocation's assigned date, not current date
                     description: `Expense: ${allocation.name}`,
                     amount: -allocation.amount,
                     resultingBalance: 0,
-                    type: 'allocation'
+                    type: 'allocation',
+                    allocationId: allocation.id // Store allocation ID for reliable matching
                 });
             } else {
-                // Unchecking - add back to balance
+                // Unchecking - add back to balance using allocation's assigned date
                 budgetData.transactionHistory.push({
-                    date: Date.now(),
+                    date: allocation.timestamp, // Use allocation's assigned date, not current date
                     description: `Undo: ${allocation.name}`,
                     amount: allocation.amount,
                     resultingBalance: 0,
-                    type: 'allocation_undo'
+                    type: 'allocation_undo',
+                    allocationId: allocation.id // Store allocation ID for reliable matching
                 });
             }
 
@@ -568,9 +705,9 @@
             if (!allocation) return;
 
             if (allocation.checked) {
-                // Find and remove the corresponding transaction from history
+                // Find and remove the corresponding transaction from history using allocation ID
                 budgetData.transactionHistory = budgetData.transactionHistory.filter(t => 
-                    t.description === `Expense: ${allocation.name}` || t.description === `Undo: ${allocation.name}`
+                    t.allocationId !== id
                 );
             }
 
@@ -627,7 +764,7 @@
                 return;
             }
 
-            const timestamp = getTransactionDate('instantDate');
+            const timestamp = getTransactionDate('instant');
 
             budgetData.instantLogs.push({
                 id: timestamp,
@@ -650,7 +787,7 @@
 
             document.getElementById('instantDescription').value = '';
             document.getElementById('instantAmount').value = '';
-            document.getElementById('instantDate').value = '';
+            // Don't clear Month/Year dropdowns to maintain persistent session
         }
 
         // Delete Instant Log
@@ -700,18 +837,17 @@
         // Add Market Item
         function addMarketItem() {
             const item = document.getElementById('marketItem').value.trim();
-            const price = parseFloat(document.getElementById('marketItemPrice').value) || 0;
 
             if (!item) {
                 alert('Please enter an item');
                 return;
             }
 
-            const timestamp = getTransactionDate('marketItemDate');
+            const timestamp = getTransactionDate('market');
             budgetData.marketChecklist.push({
                 id: timestamp,
                 item: item,
-                price: price,
+                price: 0, // Default to 0 - price added later via Edit
                 checked: false,
                 timestamp: timestamp
             });
@@ -720,8 +856,34 @@
             updateUI();
 
             document.getElementById('marketItem').value = '';
-            document.getElementById('marketItemPrice').value = '';
-            document.getElementById('marketItemDate').value = '';
+            // Don't clear Month/Year dropdowns to maintain persistent session
+        }
+
+        // Edit Market Item Price
+        function editMarketItemPrice(id) {
+            const item = budgetData.marketChecklist.find(i => i.id === id);
+            if (!item) return;
+
+            const newPrice = prompt(`Enter price for "${item.item}":`, item.price || '');
+            if (newPrice === null) return; // User cancelled
+
+            const price = parseFloat(newPrice) || 0;
+            item.price = price;
+
+            // If item is already checked and price was 0, now add transaction
+            if (item.checked && price > 0) {
+                budgetData.transactionHistory.push({
+                    date: Date.now(),
+                    description: `Market: ${item.item}`,
+                    amount: -price,
+                    resultingBalance: 0,
+                    type: 'market'
+                });
+                recalculateAllBalances();
+            }
+
+            saveData();
+            updateUI();
         }
 
         // Toggle Market Item - CRITICAL: Subtract price when checked
@@ -802,7 +964,10 @@
                             ${item.price > 0 ? `<p class="text-sm text-gray-600">${formatCurrency(item.price)}</p>` : '<p class="text-sm text-gray-400">No price set</p>'}
                         </div>
                     </div>
-                    <button onclick="deleteMarketItem(${item.id})" class="text-red-500 hover:text-red-700 ml-2">🗑️</button>
+                    <div class="flex items-center ml-2">
+                        <button onclick="editMarketItemPrice(${item.id})" class="text-blue-500 hover:text-blue-700 mr-2">✏️</button>
+                        <button onclick="deleteMarketItem(${item.id})" class="text-red-500 hover:text-red-700">🗑️</button>
+                    </div>
                 `;
                 container.appendChild(div);
             });
