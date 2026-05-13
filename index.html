@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Budget Tracker</title>
-    <meta name="description" content="Personal Budget Tracker PWA">
+    <title>CashNest</title>
+    <meta name="description" content="CashNest - Personal Budget Tracker PWA">
     <meta name="theme-color" content="#6366f1">
     <link rel="manifest" href="./manifest.json">
     <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
@@ -42,72 +42,127 @@
         
         /* Dark Mode Styles */
         .dark body {
-            background-color: #0f172a;
-            color: #f1f5f9;
-        }
-        .dark .bg-white {
-            background-color: #1e293b;
-            color: #f1f5f9;
-        }
-        .dark .bg-gray-100 {
-            background-color: #0f172a;
-        }
-        .dark .bg-gray-50 {
-            background-color: #1e293b;
-        }
-        .dark .text-gray-800 {
-            color: #f1f5f9;
-        }
-        .dark .text-gray-700 {
+            background-color: #1a1a2e;
             color: #e2e8f0;
         }
-        .dark .text-gray-600 {
+        .dark .bg-white {
+            background-color: #252542;
+            color: #e2e8f0;
+        }
+        .dark .bg-gray-100 {
+            background-color: #1a1a2e;
+        }
+        .dark .bg-gray-50 {
+            background-color: #252542;
+        }
+        .dark .text-gray-800 {
+            color: #e2e8f0;
+        }
+        .dark .text-gray-700 {
             color: #cbd5e1;
         }
-        .dark .text-gray-500 {
+        .dark .text-gray-600 {
             color: #94a3b8;
         }
+        .dark .text-gray-500 {
+            color: #64748b;
+        }
         .dark .border-gray-300 {
-            border-color: #475569;
+            border-color: #3f3f5f;
         }
         .dark .border-gray-200 {
-            border-color: #334155;
+            border-color: #2d2d4a;
         }
         .dark .bg-purple-50 {
-            background-color: #581c87;
+            background-color: #2d2d4a;
         }
         .dark .bg-purple-100 {
-            background-color: #6b21a8;
+            background-color: #3f3f5f;
         }
         .dark .border-purple-200 {
-            border-color: #7c3aed;
+            border-color: #5b5b7a;
         }
         .dark .bg-blue-50 {
-            background-color: #1e3a8a;
+            background-color: #2d2d4a;
         }
         .dark .bg-blue-100 {
-            background-color: #1e40af;
+            background-color: #3f3f5f;
         }
         .dark .border-blue-200 {
-            border-color: #3b82f6;
+            border-color: #5b5b7a;
         }
         .dark .bg-red-50 {
-            background-color: #7f1d1d;
+            background-color: #2d2d4a;
         }
         .dark .bg-red-100 {
-            background-color: #991b1b;
+            background-color: #3f3f5f;
         }
         .dark .border-red-200 {
-            border-color: #dc2626;
+            border-color: #5b5b7a;
         }
         .dark input, .dark select, .dark textarea {
-            background-color: #334155;
-            color: #f1f5f9;
-            border-color: #475569;
+            background-color: #252542;
+            color: #e2e8f0;
+            border-color: #3f3f5f;
         }
         .dark input:focus, .dark select:focus {
             border-color: #6366f1;
             outline: none;
+        }
+        .dark .bg-gradient-to-r {
+            background-image: linear-gradient(to right, #4f46e5cc, #7c3aedcc);
+        }
+        .dark .bg-indigo-50 {
+            background-color: #2d2d4a;
+        }
+        .dark nav {
+            background-color: #252542;
+            border-color: #3f3f5f;
+        }
+        .dark .nav-item {
+            color: #94a3b8;
+        }
+        .dark .nav-item:hover {
+            color: #a5b4fc;
+        }
+        .dark .nav-item.active {
+            color: #818cf8;
+        }
+        .dark .nav-item.active svg {
+            stroke: #818cf8;
+        }
+        .dark .text-red-500 {
+            color: #f87171;
+        }
+        .dark .text-red-500:hover {
+            color: #fca5a5;
+        }
+        .dark .text-indigo-500 {
+            color: #818cf8;
+        }
+        .dark .text-indigo-500:hover {
+            color: #a5b4fc;
+        }
+        .dark .text-green-500 {
+            color: #4ade80;
+        }
+        .dark .text-green-600 {
+            color: #22c55e;
+        }
+        .dark .text-red-600 {
+            color: #ef4444;
+        }
+        .dark .bg-green-50 {
+            background-color: #2d2d4a;
+        }
+        .dark .border-green-200 {
+            border-color: #5b5b7a;
+        }
+        .dark .bg-red-50 {
+            background-color: #2d2d4a;
+        }
+        .dark .border-red-200 {
+            border-color: #5b5b7a;
         }
         
         /* Prevent auto-zoom on mobile */
@@ -121,15 +176,22 @@
     <header class="sticky-header bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg">
         <div class="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex-1">
-                <h1 class="text-xl font-bold text-center mb-2">Budget Tracker</h1>
+                <h1 class="text-xl font-bold text-center mb-2">CashNest</h1>
                 <div class="text-center">
                     <p class="text-sm opacity-90">Current Balance</p>
                     <p id="currentBalance" class="text-4xl font-bold">₱0.00</p>
                 </div>
             </div>
-            <button onclick="toggleTheme()" class="ml-4 p-2 rounded-full hover:bg-white/20 transition" id="themeToggle">
-                <span id="themeIcon" class="text-2xl">🌙</span>
-            </button>
+            <div class="flex items-center gap-2 ml-4">
+                <button onclick="exportPDF()" class="p-2 rounded-full hover:bg-white/20 transition" title="Download PDF Report">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                </button>
+                <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-white/20 transition" id="themeToggle">
+                    <span id="themeIcon" class="text-2xl">🌙</span>
+                </button>
+            </div>
         </div>
     </header>
 
@@ -382,10 +444,6 @@
                     <button onclick="clearHistory()" 
                         class="text-sm text-red-500 hover:text-red-700 underline">
                         Clear History
-                    </button>
-                    <button onclick="exportPDF()" 
-                        class="text-sm text-indigo-500 hover:text-indigo-700 underline">
-                        Download PDF Report
                     </button>
                 </div>
                 <div id="transactionHistory" class="space-y-2 max-h-96 overflow-y-auto"></div>
@@ -1193,11 +1251,13 @@
             
             // Title
             doc.setFontSize(20);
-            doc.text('Budget Tracker Report', 14, 22);
+            doc.text('CashNest Financial Report', 14, 22);
             
-            // Current Balance
-            doc.setFontSize(14);
-            doc.text(`Current Balance: ${formatPDFBalance(budgetData.currentBalance)}`, 14, 35);
+            // Current Balance - only show if there are transactions
+            if (filteredTransactions.length > 0) {
+                doc.setFontSize(14);
+                doc.text(`Current Balance: ${formatPDFBalance(budgetData.currentBalance)}`, 14, 35);
+            }
             
             // Transaction History Table
             if (filteredTransactions.length > 0) {
