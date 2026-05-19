@@ -169,6 +169,93 @@
         input, select, textarea {
             font-size: 16px !important;
         }
+        
+        /* Custom Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-content {
+            background-color: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 320px;
+            width: 90%;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        .dark .modal-content {
+            background-color: #252542;
+            color: #e2e8f0;
+        }
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #1f2937;
+        }
+        .dark .modal-title {
+            color: #e2e8f0;
+        }
+        .modal-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 16px;
+            box-sizing: border-box;
+        }
+        .dark .modal-input {
+            background-color: #1a1a2e;
+            border-color: #3f3f5f;
+            color: #e2e8f0;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+        .modal-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+        .modal-btn-cancel {
+            background-color: #e5e7eb;
+            color: #374151;
+        }
+        .dark .modal-btn-cancel {
+            background-color: #3f3f5f;
+            color: #e2e8f0;
+        }
+        .modal-btn-cancel:hover {
+            background-color: #d1d5db;
+        }
+        .dark .modal-btn-cancel:hover {
+            background-color: #4f4f6f;
+        }
+        .modal-btn-confirm {
+            background-color: #6366f1;
+            color: white;
+        }
+        .modal-btn-confirm:hover {
+            background-color: #4f46e5;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -176,7 +263,9 @@
     <header class="sticky-header bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg">
         <div class="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex-1">
-                <h1 class="text-xl font-bold text-center mb-2">CashNest</h1>
+                <div class="flex justify-center mb-2">
+                    <img src="Gemini_Generated_Image_d0n4wfd0n4wfd0n4.png" alt="CashNest Logo" class="h-12 w-auto">
+                </div>
                 <div class="text-center">
                     <p class="text-sm opacity-90">Current Balance</p>
                     <p id="currentBalance" class="text-4xl font-bold">₱0.00</p>
@@ -198,16 +287,16 @@
     <main class="max-w-md mx-auto px-4 py-6">
         <!-- Tab 1: Add Credit -->
         <div id="tab-credit" class="tab-content active">
-            <section class="bg-white rounded-xl shadow-md p-4">
-                <h2 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+            <section class="bg-white rounded-xl shadow-md p-5">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                     <span class="text-green-500 mr-2">➕</span> Add Credit
                 </h2>
                 <!-- Filter Dropdowns -->
-                <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="grid grid-cols-2 gap-4 mb-5">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Month</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Month</label>
                         <select id="creditFilterMonth" onchange="updateUI()" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                             <option value="all">All Months</option>
                             <option value="0">January</option>
                             <option value="1">February</option>
@@ -224,20 +313,20 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Year</label>
                         <select id="creditFilterYear" onchange="updateUI()" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                             <option value="all">All Years</option>
                         </select>
                     </div>
                 </div>
-                <div class="space-y-3">
+                <div class="space-y-4">
                     <input type="number" id="creditAmount" placeholder="Amount" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                     <input type="text" id="creditSource" placeholder="Source (e.g., Salary, Allowance)" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                     <button onclick="addCredit()" 
-                        class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition">
+                        class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition-all hover:shadow-md">
                         Add Credit
                     </button>
                 </div>
@@ -246,16 +335,16 @@
 
         <!-- Tab 2: Planned Allocations -->
         <div id="tab-allocations" class="tab-content">
-            <section class="bg-white rounded-xl shadow-md p-4">
-                <h2 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+            <section class="bg-white rounded-xl shadow-md p-5">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                     <span class="text-blue-500 mr-2">📋</span> Planned Allocations
                 </h2>
                 <!-- Filter Dropdowns -->
-                <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="grid grid-cols-2 gap-4 mb-5">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Month</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Month</label>
                         <select id="allocationFilterMonth" onchange="updateUI()" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                             <option value="all">All Months</option>
                             <option value="0">January</option>
                             <option value="1">February</option>
@@ -272,39 +361,39 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Year</label>
                         <select id="allocationFilterYear" onchange="updateUI()" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                             <option value="all">All Years</option>
                         </select>
                     </div>
                 </div>
-                <div class="space-y-3">
+                <div class="space-y-4">
                     <input type="text" id="allocationName" placeholder="Expense Name (e.g., Tuition)" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                     <input type="number" id="allocationAmount" placeholder="Amount" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                     <button onclick="addAllocation()" 
-                        class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition">
+                        class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition-all hover:shadow-md">
                         Add Planned Expense
                     </button>
                 </div>
-                <div id="allocationsList" class="space-y-2 mt-3"></div>
+                <div id="allocationsList" class="space-y-2 mt-4"></div>
             </section>
         </div>
 
         <!-- Tab 3: Instant Spending -->
         <div id="tab-instant" class="tab-content">
-            <section class="bg-white rounded-xl shadow-md p-4">
-                <h2 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+            <section class="bg-white rounded-xl shadow-md p-5">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                     <span class="text-red-500 mr-2">⚡</span> Instant Spending Log
                 </h2>
                 <!-- Filter Dropdowns -->
-                <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="grid grid-cols-2 gap-4 mb-5">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Month</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Month</label>
                         <select id="instantFilterMonth" onchange="updateUI()" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                             <option value="all">All Months</option>
                             <option value="0">January</option>
                             <option value="1">February</option>
@@ -321,39 +410,39 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Year</label>
                         <select id="instantFilterYear" onchange="updateUI()" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                             <option value="all">All Years</option>
                         </select>
                     </div>
                 </div>
-                <div class="space-y-3">
+                <div class="space-y-4">
                     <input type="text" id="instantDescription" placeholder="Description (e.g., Food, Transport)" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                     <input type="number" id="instantAmount" placeholder="Amount" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                     <button onclick="addInstantLog()" 
-                        class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition">
+                        class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition-all hover:shadow-md">
                         Log Instant Spending
                     </button>
                 </div>
-                <div id="instantLogList" class="space-y-2 mt-3"></div>
+                <div id="instantLogList" class="space-y-2 mt-4"></div>
             </section>
         </div>
 
         <!-- Tab 4: Market Checklist -->
         <div id="tab-market" class="tab-content">
-            <section class="bg-white rounded-xl shadow-md p-4">
-                <h2 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+            <section class="bg-white rounded-xl shadow-md p-5">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                     <span class="text-purple-500 mr-2">🛒</span> Checklist
                 </h2>
                 <!-- Filter Dropdowns -->
-                <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="grid grid-cols-2 gap-4 mb-5">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Month</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Month</label>
                         <select id="marketFilterMonth" onchange="updateUI()" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                             <option value="all">All Months</option>
                             <option value="0">January</option>
                             <option value="1">February</option>
@@ -370,38 +459,38 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Year</label>
                         <select id="marketFilterYear" onchange="updateUI()" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                             <option value="all">All Years</option>
                         </select>
                     </div>
                 </div>
-                <div class="space-y-3">
+                <div class="space-y-4">
                     <input type="text" id="marketItem" placeholder="Shopping Item" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                     <button onclick="addMarketItem()" 
-                        class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg transition">
+                        class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-4 rounded-lg transition-all hover:shadow-md">
                         Add to Checklist
                     </button>
                 </div>
-                <div id="marketChecklist" class="space-y-2 mt-3"></div>
+                <div id="marketChecklist" class="space-y-2 mt-4"></div>
             </section>
         </div>
 
         <!-- Tab 5: Transaction History -->
         <div id="tab-history" class="tab-content">
-            <section class="bg-white rounded-xl shadow-md p-4">
-                <h2 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+            <section class="bg-white rounded-xl shadow-md p-5">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                     <span class="text-gray-500 mr-2">📜</span> Transaction History
                 </h2>
                 
                 <!-- Filter Dropdowns -->
-                <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="grid grid-cols-2 gap-4 mb-5">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Month</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Month</label>
                         <select id="filterMonth" onchange="updateTransactionHistory()" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                             <option value="all">All Months</option>
                             <option value="0">January</option>
                             <option value="1">February</option>
@@ -418,9 +507,9 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Year</label>
                         <select id="filterYear" onchange="updateTransactionHistory()" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                         </select>
                     </div>
                 </div>
@@ -486,6 +575,18 @@
             </button>
         </div>
     </nav>
+
+    <!-- Custom Modal for Price Input -->
+    <div id="priceModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 class="modal-title" id="modalTitle">Enter Price</h3>
+            <input type="number" id="modalPriceInput" class="modal-input" placeholder="Enter price" step="0.01">
+            <div class="modal-buttons">
+                <button onclick="closePriceModal()" class="modal-btn modal-btn-cancel">Cancel</button>
+                <button onclick="confirmPriceModal()" class="modal-btn modal-btn-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // Theme Toggle
@@ -576,7 +677,9 @@
         // Initialize Year Dropdown
         function initializeYearDropdown() {
             const yearSelect = document.getElementById('filterYear');
+            const monthSelect = document.getElementById('filterMonth');
             const currentYear = new Date().getFullYear();
+            const currentMonth = new Date().getMonth();
             
             // Add "All Years" option
             const allYearsOption = document.createElement('option');
@@ -594,11 +697,20 @@
                 yearSelect.appendChild(option);
             }
 
+            // Set current month by default
+            if (monthSelect) {
+                monthSelect.value = currentMonth;
+            }
+
             // Initialize year dropdowns for other tabs
             const creditYearSelect = document.getElementById('creditFilterYear');
+            const creditMonthSelect = document.getElementById('creditFilterMonth');
             const allocationYearSelect = document.getElementById('allocationFilterYear');
+            const allocationMonthSelect = document.getElementById('allocationFilterMonth');
             const instantYearSelect = document.getElementById('instantFilterYear');
+            const instantMonthSelect = document.getElementById('instantFilterMonth');
             const marketYearSelect = document.getElementById('marketFilterYear');
+            const marketMonthSelect = document.getElementById('marketFilterMonth');
 
             [creditYearSelect, allocationYearSelect, instantYearSelect, marketYearSelect].forEach(select => {
                 if (select) {
@@ -608,8 +720,16 @@
                         const option = document.createElement('option');
                         option.value = year;
                         option.textContent = year;
+                        if (i === 0) option.selected = true; // Select current year by default
                         select.appendChild(option);
                     }
+                }
+            });
+
+            // Set current month for all tabs
+            [creditMonthSelect, allocationMonthSelect, instantMonthSelect, marketMonthSelect].forEach(select => {
+                if (select) {
+                    select.value = currentMonth;
                 }
             });
         }
@@ -1004,15 +1124,31 @@
             document.getElementById('marketItem').value = '';
         }
 
-        // Edit Market Item Price
-        function editMarketItemPrice(id) {
-            const item = budgetData.marketChecklist.find(i => i.id === id);
+        // Custom Modal Functions
+        let currentEditingItemId = null;
+
+        function openPriceModal(itemName, currentPrice, itemId) {
+            document.getElementById('modalTitle').textContent = `Enter price for "${itemName}"`;
+            document.getElementById('modalPriceInput').value = currentPrice || '';
+            currentEditingItemId = itemId;
+            document.getElementById('priceModal').classList.add('active');
+            document.getElementById('modalPriceInput').focus();
+        }
+
+        function closePriceModal() {
+            document.getElementById('priceModal').classList.remove('active');
+            currentEditingItemId = null;
+        }
+
+        function confirmPriceModal() {
+            if (currentEditingItemId === null) return;
+            
+            const newPrice = document.getElementById('modalPriceInput').value;
+            const price = parseFloat(newPrice) || 0;
+            
+            const item = budgetData.marketChecklist.find(i => i.id === currentEditingItemId);
             if (!item) return;
 
-            const newPrice = prompt(`Enter price for "${item.item}":`, item.price || '');
-            if (newPrice === null) return; // User cancelled
-
-            const price = parseFloat(newPrice) || 0;
             item.price = price;
 
             // If item is already checked and price was 0, now add transaction
@@ -1029,6 +1165,15 @@
 
             saveData();
             updateUI();
+            closePriceModal();
+        }
+
+        // Edit Market Item Price
+        function editMarketItemPrice(id) {
+            const item = budgetData.marketChecklist.find(i => i.id === id);
+            if (!item) return;
+
+            openPriceModal(item.item, item.price, id);
         }
 
         // Toggle Market Item - CRITICAL: Subtract price when checked
