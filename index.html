@@ -1108,8 +1108,9 @@
             }
 
             const timestamp = getTransactionDate('market');
+            const uniqueId = Date.now(); // Use unique timestamp for ID
             budgetData.marketChecklist.push({
-                id: timestamp,
+                id: uniqueId,
                 item: item,
                 price: 0, // Default to 0 - price added later via Edit
                 checked: false,
@@ -1147,18 +1148,35 @@
             const item = budgetData.marketChecklist.find(i => i.id === currentEditingItemId);
             if (!item) return;
 
+            const oldPrice = item.price || 0;
             item.price = price;
 
-            // If item is already checked and price was 0, now add transaction
-            if (item.checked && price > 0) {
-                budgetData.transactionHistory.push({
-                    date: Date.now(),
-                    description: `Market: ${item.item}`,
-                    amount: -price,
-                    resultingBalance: 0,
-                    type: 'market'
-                });
-                recalculateAllBalances();
+            // If item is already checked and price changed, update transaction
+            if (item.checked) {
+                if (oldPrice === 0 && price > 0) {
+                    // Price was 0, now has value - add transaction
+                    budgetData.transactionHistory.push({
+                        date: Date.now(),
+                        description: `Market: ${item.item}`,
+                        amount: -price,
+                        resultingBalance: 0,
+                        type: 'market'
+                    });
+                    recalculateAllBalances();
+                } else if (oldPrice > 0 && price > 0 && oldPrice !== price) {
+                    // Price changed - remove old transaction and add new one
+                    budgetData.transactionHistory = budgetData.transactionHistory.filter(t => 
+                        t.description !== `Market: ${item.item}` && t.description !== `Unmarked: ${item.item}`
+                    );
+                    budgetData.transactionHistory.push({
+                        date: Date.now(),
+                        description: `Market: ${item.item}`,
+                        amount: -price,
+                        resultingBalance: 0,
+                        type: 'market'
+                    });
+                    recalculateAllBalances();
+                }
             }
 
             saveData();
@@ -1179,31 +1197,34 @@
             const item = budgetData.marketChecklist.find(i => i.id === id);
             if (!item) return;
 
-            if (!item.checked && item.price > 0) {
-                // Checking the box - subtract from balance and add to history
+            if (!item.checked) {
+                // Checking the box
                 item.checked = true;
 
-                budgetData.transactionHistory.push({
-                    date: Date.now(),
-                    description: `Market: ${item.item}`,
-                    amount: -item.price,
-                    resultingBalance: 0,
-                    type: 'market'
-                });
-            } else if (item.checked) {
-                // Unchecking - add back to balance
+                if (item.price > 0) {
+                    // Has price - subtract from balance and add to history
+                    budgetData.transactionHistory.push({
+                        date: Date.now(),
+                        description: `Market: ${item.item}`,
+                        amount: -item.price,
+                        resultingBalance: 0,
+                        type: 'market'
+                    });
+                }
+                // No price - just toggle visual state
+            } else {
+                // Unchecking - add back to balance if had price
                 item.checked = false;
 
-                budgetData.transactionHistory.push({
-                    date: Date.now(),
-                    description: `Unmarked: ${item.item}`,
-                    amount: item.price,
-                    resultingBalance: 0,
-                    type: 'market_undo'
-                });
-            } else {
-                // No price, just toggle visual state
-                item.checked = !item.checked;
+                if (item.price > 0) {
+                    budgetData.transactionHistory.push({
+                        date: Date.now(),
+                        description: `Unmarked: ${item.item}`,
+                        amount: item.price,
+                        resultingBalance: 0,
+                        type: 'market_undo'
+                    });
+                }
             }
 
             recalculateAllBalances();
@@ -1213,8 +1234,10 @@
 
         // Delete Market Item
         function deleteMarketItem(id) {
-            const item = budgetData.marketChecklist.find(i => i.id === id);
-            if (!item) return;
+            const itemIndex = budgetData.marketChecklist.findIndex(i => i.id === id);
+            if (itemIndex === -1) return;
+
+            const item = budgetData.marketChecklist[itemIndex];
 
             if (item.checked && item.price > 0) {
                 // Find and remove the corresponding transaction from history
@@ -1223,7 +1246,8 @@
                 );
             }
 
-            budgetData.marketChecklist = budgetData.marketChecklist.filter(i => i.id !== id);
+            // Remove the specific item by index to ensure only one item is deleted
+            budgetData.marketChecklist.splice(itemIndex, 1);
             recalculateAllBalances();
             saveData();
             updateUI();
