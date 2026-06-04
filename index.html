@@ -14,6 +14,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="config.js"></script>
     <style>
         .sticky-header {
             position: sticky;
@@ -273,7 +274,6 @@
                 </div>
             </div>
             <div class="flex items-center gap-2 ml-4">
-                <span id="syncStatus" class="text-green-500 text-xs">✓ Synced</span>
                 <button onclick="exportPDF()" class="p-2 rounded-full hover:bg-white/20 transition" title="Download PDF Report">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -736,16 +736,12 @@
             });
         }
 
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyAk3D8yH7WiSlTHo6UrZEckL5aT7IUqUFQ",
-            authDomain: "budget-tracker-7d6a3.firebaseapp.com",
-            projectId: "budget-tracker-7d6a3",
-            storageBucket: "budget-tracker-7d6a3.firebasestorage.app",
-            messagingSenderId: "158701995803",
-            appId: "1:158701995803:web:578dfb93e5a5608ce175be",
-            measurementId: "G-5Y7CZ81MSM"
-        };
+        // Firebase Configuration (loaded from config.js)
+        // If firebaseConfig is not defined, show error
+        if (typeof firebaseConfig === 'undefined') {
+            console.error('Firebase configuration not found. Please create config.js based on config.example.js');
+            alert('Firebase configuration missing. Please create config.js based on config.example.js');
+        }
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
@@ -878,29 +874,14 @@
 
         // Network Status
         let isOnline = navigator.onLine;
-        let syncStatus = 'synced';
-
-        function updateSyncStatus(status) {
-            syncStatus = status;
-            const statusElement = document.getElementById('syncStatus');
-            if (statusElement) {
-                statusElement.textContent = status === 'synced' ? '✓ Synced' : 
-                                          status === 'syncing' ? '⟳ Syncing...' : 
-                statusElement.className = status === 'synced' ? 'text-green-500 text-xs' :
-                                       status === 'syncing' ? 'text-blue-500 text-xs' :
-                                       'text-yellow-500 text-xs';
-            }
-        }
 
         window.addEventListener('online', () => {
             isOnline = true;
-            updateSyncStatus('syncing');
             syncQueueToFirebase();
         });
 
         window.addEventListener('offline', () => {
             isOnline = false;
-            updateSyncStatus('offline');
         });
 
         // Firebase Operations
