@@ -11,6 +11,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <style>
         .sticky-header {
             position: sticky;
@@ -270,6 +273,7 @@
                 </div>
             </div>
             <div class="flex items-center gap-2 ml-4">
+                <span id="syncStatus" class="text-green-500 text-xs">✓ Synced</span>
                 <button onclick="exportPDF()" class="p-2 rounded-full hover:bg-white/20 transition" title="Download PDF Report">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -732,18 +736,342 @@
             });
         }
 
-        // Load data from LocalStorage
-        function loadData() {
-            const saved = localStorage.getItem('budgetTrackerData');
-            if (saved) {
-                budgetData = JSON.parse(saved);
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAk3D8yH7WiSlTHo6UrZEckL5aT7IUqUFQ",
+            authDomain: "budget-tracker-7d6a3.firebaseapp.com",
+            projectId: "budget-tracker-7d6a3",
+            storageBucket: "budget-tracker-7d6a3.firebasestorage.app",
+            messagingSenderId: "158701995803",
+            appId: "1:158701995803:web:578dfb93e5a5608ce175be",
+            measurementId: "G-5Y7CZ81MSM"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // Anonymous Authentication
+        let isAuthenticated = false;
+
+        async function signInAnonymously() {
+            try {
+                const result = await auth.signInAnonymously();
+                isAuthenticated = true;
+                console.log('Signed in anonymously:', result.user.uid);
+                return result.user;
+            } catch (error) {
+                console.error('Anonymous sign-in error:', error);
+                throw error;
             }
-            updateUI();
         }
 
-        // Save data to LocalStorage
-        function saveData() {
-            localStorage.setItem('budgetTrackerData', JSON.stringify(budgetData));
+        // Listen for authentication state changes
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                isAuthenticated = true;
+                console.log('User is signed in:', user.uid);
+                // Load data after successful authentication
+                loadData();
+            } else {
+                isAuthenticated = false;
+                console.log('User is signed out');
+                // Try to sign in anonymously
+                signInAnonymously().catch(err => {
+                    console.error('Failed to sign in anonymously:', err);
+                });
+            }
+        });
+
+        // IndexedDB Setup
+        const DB_NAME = 'CashNestDB';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'budgetData';
+        const SYNC_QUEUE_STORE = 'syncQueue';
+
+        let dbInstance = null;
+
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    dbInstance = request.result;
+                    resolve(dbInstance);
+                };
+
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                    }
+                    if (!db.objectStoreNames.contains(SYNC_QUEUE_STORE)) {
+                        const syncStore = db.createObjectStore(SYNC_QUEUE_STORE, { keyPath: 'id', autoIncrement: true });
+                        syncStore.createIndex('timestamp', 'timestamp', { unique: false });
+                    }
+                };
+            });
+        }
+
+        // IndexedDB Operations
+        async function saveToIndexedDB(data) {
+            if (!dbInstance) await openDB();
+            return new Promise((resolve, reject) => {
+                const transaction = dbInstance.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.put({ id: 'budgetData', ...data });
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async function loadFromIndexedDB() {
+            if (!dbInstance) await openDB();
+            return new Promise((resolve, reject) => {
+                const transaction = dbInstance.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.get('budgetData');
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        // Sync Queue Operations
+        async function addToSyncQueue(operation) {
+            if (!dbInstance) await openDB();
+            return new Promise((resolve, reject) => {
+                const transaction = dbInstance.transaction([SYNC_QUEUE_STORE], 'readwrite');
+                const store = transaction.objectStore(SYNC_QUEUE_STORE);
+                const request = store.add({
+                    operation,
+                    timestamp: Date.now(),
+                    synced: false
+                });
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async function getSyncQueue() {
+            if (!dbInstance) await openDB();
+            return new Promise((resolve, reject) => {
+                const transaction = dbInstance.transaction([SYNC_QUEUE_STORE], 'readonly');
+                const store = transaction.objectStore(SYNC_QUEUE_STORE);
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async function removeFromSyncQueue(id) {
+            if (!dbInstance) await openDB();
+            return new Promise((resolve, reject) => {
+                const transaction = dbInstance.transaction([SYNC_QUEUE_STORE], 'readwrite');
+                const store = transaction.objectStore(SYNC_QUEUE_STORE);
+                const request = store.delete(id);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        // Network Status
+        let isOnline = navigator.onLine;
+        let syncStatus = 'synced';
+
+        function updateSyncStatus(status) {
+            syncStatus = status;
+            const statusElement = document.getElementById('syncStatus');
+            if (statusElement) {
+                statusElement.textContent = status === 'synced' ? '✓ Synced' : 
+                                          status === 'syncing' ? '⟳ Syncing...' : 
+                statusElement.className = status === 'synced' ? 'text-green-500 text-xs' :
+                                       status === 'syncing' ? 'text-blue-500 text-xs' :
+                                       'text-yellow-500 text-xs';
+            }
+        }
+
+        window.addEventListener('online', () => {
+            isOnline = true;
+            updateSyncStatus('syncing');
+            syncQueueToFirebase();
+        });
+
+        window.addEventListener('offline', () => {
+            isOnline = false;
+            updateSyncStatus('offline');
+        });
+
+        // Firebase Operations
+        async function saveToFirebase(data) {
+            try {
+                if (!isAuthenticated) {
+                    console.log('Not authenticated, skipping Firebase save');
+                    return false;
+                }
+                await db.collection('budgetData').doc('userBudget').set(data);
+                return true;
+            } catch (error) {
+                console.error('Firebase save error:', error);
+                return false;
+            }
+        }
+
+        async function loadFromFirebase() {
+            try {
+                if (!isAuthenticated) {
+                    console.log('Not authenticated, skipping Firebase load');
+                    return null;
+                }
+                const doc = await db.collection('budgetData').doc('userBudget').get();
+                if (doc.exists) {
+                    return doc.data();
+                }
+                return null;
+            } catch (error) {
+                console.error('Firebase load error:', error);
+                return null;
+            }
+        }
+
+        // Sync Queue to Firebase
+        async function syncQueueToFirebase() {
+            if (!isOnline || !isAuthenticated) return;
+
+            const queue = await getSyncQueue();
+            if (queue.length === 0) {
+                updateSyncStatus('synced');
+                return;
+            }
+
+            // Sort by timestamp to ensure chronological order
+            queue.sort((a, b) => a.timestamp - b.timestamp);
+
+            for (const item of queue) {
+                try {
+                    const { operation } = item;
+                    // Apply operation to Firebase
+                    await applyOperationToFirebase(operation);
+                    await removeFromSyncQueue(item.id);
+                } catch (error) {
+                    console.error('Sync error for item:', item, error);
+                }
+            }
+
+            updateSyncStatus('synced');
+        }
+
+        async function applyOperationToFirebase(operation) {
+            const currentData = await loadFromFirebase() || budgetData;
+            
+            switch (operation.type) {
+                case 'addCredit':
+                    currentData.credits.push(operation.data);
+                    break;
+                case 'addAllocation':
+                    currentData.allocations.push(operation.data);
+                    break;
+                case 'toggleAllocation':
+                    const allocIndex = currentData.allocations.findIndex(a => a.id === operation.data.id);
+                    if (allocIndex !== -1) {
+                        currentData.allocations[allocIndex].checked = operation.data.checked;
+                    }
+                    break;
+                case 'deleteAllocation':
+                    currentData.allocations = currentData.allocations.filter(a => a.id !== operation.data.id);
+                    break;
+                case 'addInstantLog':
+                    currentData.instantLogs.push(operation.data);
+                    break;
+                case 'deleteInstantLog':
+                    currentData.instantLogs = currentData.instantLogs.filter(l => l.id !== operation.data.id);
+                    break;
+                case 'addMarketItem':
+                    currentData.marketChecklist.push(operation.data);
+                    break;
+                case 'updateMarketItemPrice':
+                    const marketIndex = currentData.marketChecklist.findIndex(i => i.id === operation.data.id);
+                    if (marketIndex !== -1) {
+                        currentData.marketChecklist[marketIndex].price = operation.data.price;
+                    }
+                    break;
+                case 'toggleMarketItem':
+                    const marketItemIndex = currentData.marketChecklist.findIndex(i => i.id === operation.data.id);
+                    if (marketItemIndex !== -1) {
+                        currentData.marketChecklist[marketItemIndex].checked = operation.data.checked;
+                    }
+                    break;
+                case 'deleteMarketItem':
+                    currentData.marketChecklist = currentData.marketChecklist.filter(i => i.id !== operation.data.id);
+                    break;
+                case 'clearHistory':
+                    currentData.transactionHistory = [];
+                    break;
+            }
+
+            await saveToFirebase(currentData);
+        }
+
+        // Load data from IndexedDB and Firebase
+        async function loadData() {
+            // Try to load from IndexedDB first (offline)
+            const localData = await loadFromIndexedDB();
+            if (localData) {
+                budgetData = localData;
+                updateUI();
+            }
+
+            // Wait for authentication before syncing with Firebase
+            if (!isAuthenticated) {
+                console.log('Waiting for authentication...');
+                updateSyncStatus('syncing');
+                return;
+            }
+
+            // If online and authenticated, sync with Firebase
+            if (isOnline && isAuthenticated) {
+                const firebaseData = await loadFromFirebase();
+                if (firebaseData) {
+                    // Conflict resolution: Last Write Wins (Firebase wins if timestamp is newer)
+                    if (!localData || firebaseData.lastModified > localData.lastModified) {
+                        budgetData = firebaseData;
+                        await saveToIndexedDB(budgetData);
+                        updateUI();
+                    }
+                }
+                updateSyncStatus('synced');
+            } else {
+                updateSyncStatus('offline');
+            }
+        }
+
+        // Save data to IndexedDB and Firebase
+        async function saveData(operation = null) {
+            budgetData.lastModified = Date.now();
+            
+            // Save to IndexedDB (local)
+            await saveToIndexedDB(budgetData);
+            
+            // If online, save to Firebase directly
+            if (isOnline) {
+                const success = await saveToFirebase(budgetData);
+                if (success) {
+                    updateSyncStatus('synced');
+                } else {
+                    // If Firebase fails, add to sync queue
+                    if (operation) {
+                        await addToSyncQueue(operation);
+                    }
+                    updateSyncStatus('offline');
+                }
+            } else {
+                // If offline, add to sync queue
+                if (operation) {
+                    await addToSyncQueue(operation);
+                }
+                updateSyncStatus('offline');
+            }
         }
 
         // Format currency
@@ -759,21 +1087,10 @@
             });
         }
 
-        // Get transaction date from Month/Year dropdowns or use current date
+        // Get transaction date - always use current date/time
         function getTransactionDate(prefix) {
-            const monthInput = document.getElementById(`${prefix}FilterMonth`);
-            const yearInput = document.getElementById(`${prefix}FilterYear`);
-            
-            if (monthInput && yearInput && monthInput.value !== 'all' && yearInput.value !== 'all') {
-                // User has selected a specific Month/Year - use 1st day of that month
-                const selectedMonth = parseInt(monthInput.value);
-                const selectedYear = parseInt(yearInput.value);
-                const selectedDate = new Date(selectedYear, selectedMonth, 1);
-                selectedDate.setHours(12, 0, 0, 0);
-                return selectedDate.getTime();
-            }
-            
-            // Dropdowns are at default - use current date/time (Today)
+            // Always use current date/time when adding transactions
+            // The Month/Year dropdowns are only for filtering/viewing, not for setting transaction dates
             return Date.now();
         }
 
@@ -861,7 +1178,7 @@
             });
 
             recalculateAllBalances();
-            saveData();
+            saveData({ type: 'addCredit', data: { id: timestamp, amount, source, timestamp } });
             updateUI();
 
             document.getElementById('creditAmount').value = '';
@@ -893,7 +1210,7 @@
                 timestamp: timestamp
             });
 
-            saveData();
+            saveData({ type: 'addAllocation', data: { id: uniqueId, name, amount, checked: false, timestamp } });
             updateUI();
 
             document.getElementById('allocationName').value = '';
@@ -929,7 +1246,7 @@
 
             allocation.checked = !allocation.checked;
             recalculateAllBalances();
-            saveData();
+            saveData({ type: 'toggleAllocation', data: { id: allocation.id, checked: allocation.checked } });
             updateUI();
         }
 
@@ -947,7 +1264,7 @@
 
             budgetData.allocations = budgetData.allocations.filter(a => a.id !== id);
             recalculateAllBalances();
-            saveData();
+            saveData({ type: 'deleteAllocation', data: { id } });
             updateUI();
         }
 
@@ -1030,7 +1347,7 @@
             });
 
             recalculateAllBalances();
-            saveData();
+            saveData({ type: 'addInstantLog', data: { id: timestamp, description, amount, timestamp } });
             updateUI();
 
             document.getElementById('instantDescription').value = '';
@@ -1049,7 +1366,7 @@
 
             budgetData.instantLogs = budgetData.instantLogs.filter(l => l.id !== id);
             recalculateAllBalances();
-            saveData();
+            saveData({ type: 'deleteInstantLog', data: { id } });
             updateUI();
         }
 
@@ -1117,7 +1434,7 @@
                 timestamp: timestamp
             });
 
-            saveData();
+            saveData({ type: 'addMarketItem', data: { id: uniqueId, item, price: 0, checked: false, timestamp } });
             updateUI();
 
             document.getElementById('marketItem').value = '';
@@ -1179,7 +1496,7 @@
                 }
             }
 
-            saveData();
+            saveData({ type: 'updateMarketItemPrice', data: { id: currentEditingItemId, price } });
             updateUI();
             closePriceModal();
         }
@@ -1228,7 +1545,7 @@
             }
 
             recalculateAllBalances();
-            saveData();
+            saveData({ type: 'toggleMarketItem', data: { id, checked: item.checked } });
             updateUI();
         }
 
@@ -1249,7 +1566,7 @@
             // Remove the specific item by index to ensure only one item is deleted
             budgetData.marketChecklist.splice(itemIndex, 1);
             recalculateAllBalances();
-            saveData();
+            saveData({ type: 'deleteMarketItem', data: { id } });
             updateUI();
         }
 
@@ -1388,7 +1705,7 @@
         function clearHistory() {
             if (confirm('Are you sure you want to clear all transaction history? This cannot be undone.')) {
                 budgetData.transactionHistory = [];
-                saveData();
+                saveData({ type: 'clearHistory', data: {} });
                 updateUI();
             }
         }
@@ -1471,9 +1788,12 @@
         }
 
         // Initialize
-        loadTheme();
-        initializeYearDropdown();
-        loadData();
+        (async function init() {
+            await openDB();
+            loadTheme();
+            initializeYearDropdown();
+            // loadData will be called after authentication
+        })();
     </script>
 </body>
 </html>
