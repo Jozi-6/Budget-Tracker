@@ -645,12 +645,29 @@
             try {
                 const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
                 if (savedData) {
-                    return JSON.parse(savedData);
+                    const parsed = JSON.parse(savedData);
+                    // Ensure all required fields exist
+                    return {
+                        credits: parsed.credits || [],
+                        allocations: parsed.allocations || [],
+                        instantLogs: parsed.instantLogs || [],
+                        marketChecklist: parsed.marketChecklist || [],
+                        transactionHistory: parsed.transactionHistory || [],
+                        lastModified: parsed.lastModified || Date.now()
+                    };
                 }
             } catch (error) {
                 console.error('Error loading from localStorage:', error);
             }
-            return null;
+            // Return default structure if no data found
+            return {
+                credits: [],
+                allocations: [],
+                instantLogs: [],
+                marketChecklist: [],
+                transactionHistory: [],
+                lastModified: Date.now()
+            };
         }
 
         // Calculate current balance by processing all transactions chronologically
@@ -1031,18 +1048,16 @@
 
         // Load data from localStorage, IndexedDB and Firebase
         async function loadData() {
-            // Try to load from localStorage first (simplest and fastest)
+            // Always load from localStorage first (simplest and fastest)
             const localStorageData = loadFromLocalStorage();
-            if (localStorageData) {
-                budgetData = localStorageData;
-                updateUI();
-            }
+            budgetData = localStorageData;
+            updateUI();
 
             // Try to load from IndexedDB second (offline)
             const indexedDBData = await loadFromIndexedDB();
             if (indexedDBData) {
                 // Use IndexedDB data if it's newer than localStorage
-                if (!localStorageData || (indexedDBData.lastModified && (!localStorageData.lastModified || indexedDBData.lastModified > localStorageData.lastModified))) {
+                if (indexedDBData.lastModified > localStorageData.lastModified) {
                     budgetData = indexedDBData;
                     updateUI();
                 }
@@ -1060,8 +1075,7 @@
                 const firebaseData = await loadFromFirebase();
                 if (firebaseData) {
                     // Conflict resolution: Last Write Wins (Firebase wins if timestamp is newer)
-                    const localData = localStorageData || indexedDBData;
-                    if (!localData || firebaseData.lastModified > localData.lastModified) {
+                    if (firebaseData.lastModified > budgetData.lastModified) {
                         budgetData = firebaseData;
                         await saveToIndexedDB(budgetData);
                         saveToLocalStorage();
